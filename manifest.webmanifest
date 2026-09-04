@@ -1,0 +1,14 @@
+{
+  "name": "Massachusetts Permit Prep",
+  "short_name": "MA Permit Prep",
+  "description": "Massachusetts Class D learner's-permit practice based on the official RMV Driver's Manual.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#07111f",
+  "theme_color": "#07111f",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "./icons/app-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
