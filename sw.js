@@ -1,7 +1,7 @@
 "use strict";
 
-const CACHE_NAME = "massachusetts-permit-prep-v8";
-const APP_FILES = ["./", "./index.html", "./styles.css", "./questions.js", "./engine.js", "./app.js", "./manifest.webmanifest", "./icons/app-icon.svg"];
+const CACHE_NAME = "massachusetts-permit-prep-v9";
+const APP_FILES = ["./", "./index.html", "./styles.css", "./questions.js", "./engine.js", "./app.js", "./manifest.webmanifest", "./icons/ma-app-icon.svg", "./icons/ma-app-icon-192.png", "./icons/ma-app-icon-512.png"];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_FILES)).then(() => self.skipWaiting()));
