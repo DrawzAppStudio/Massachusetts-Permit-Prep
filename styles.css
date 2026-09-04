@@ -66,7 +66,7 @@ button { touch-action: manipulation; }
   background: var(--yellow);
   box-shadow: 0 0 24px rgba(255, 216, 77, .16);
 }
-.mark span { transform: rotate(-45deg); font-weight: 950; }
+.mark span { transform: rotate(-45deg); font-size: .72rem; font-weight: 950; letter-spacing: 0; }
 .brand { min-width: 0; }
 .brand strong { display: block; font-size: 1rem; letter-spacing: .01em; }
 .brand small { display: block; margin-top: .08rem; color: var(--muted); font-size: .8rem; }

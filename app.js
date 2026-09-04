@@ -64,7 +64,7 @@
     return `
       <div class="shell">
         <header class="topbar">
-          ${showBack ? `<button class="icon-button" data-action="back-home" aria-label="Return home">←</button>` : `<div class="mark" aria-hidden="true"><span>?</span></div>`}
+          ${showBack ? `<button class="icon-button" data-action="back-home" aria-label="Return home">←</button>` : `<div class="mark" aria-hidden="true"><span>MA</span></div>`}
           <div class="brand"><strong>${esc(title)}</strong><small>${esc(subtitle)}</small></div>
         </header>
         ${flashMessage ? `<div class="notice error" role="alert">${esc(flashMessage)}</div>` : ""}
