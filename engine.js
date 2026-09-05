@@ -86,6 +86,7 @@
       const q = byId.get(item.id);
       if (!q) throw new Error(`Missing question: ${item.id}`);
       const answerId = test.answers[item.id];
+      if (!answerId) return;
       if (answerId === q.correct) score += 1;
       else {
         missed.push({id:q.id, answerId:answerId || null});
