@@ -231,19 +231,21 @@
       <section class="card">
         <p class="eyebrow">Question ${test.index + 1} of 25</p>
         <div class="progress" aria-label="Test progress"><span style="width:${((test.index + 1) / 25) * 100}%"></span></div>
-        <div class="running-score" aria-live="polite">
-          <span class="correct-count">Correct: <strong>${counts.correct}</strong>/18</span>
-          <span class="wrong-count">Wrong: <strong>${counts.wrong}</strong>/8</span>
-        </div>
         <h2 class="question">${esc(question.prompt)}</h2>
         <div class="choices">${choices}</div>
-        ${test.lastResult ? `<div class="notice ${test.lastResult === "Correct" ? "success" : "error"}" role="status"><strong>Previous answer: ${test.lastResult}.</strong> Running total: ${counts.correct} correct and ${counts.wrong} wrong. ${18 - counts.correct} more correct answer${18 - counts.correct === 1 ? "" : "s"} passes the test; ${8 - counts.wrong} more wrong answer${8 - counts.wrong === 1 ? "" : "s"} ends it.</div>` : ""}
       </section>
       <div class="sticky-actions">
         <button class="button secondary" data-action="previous-question" ${test.index === 0 ? "disabled" : ""}>Back</button>
         <button class="button ghost" data-action="skip-question" ${test.lastActionWasSkip || test.index === 24 ? "disabled" : ""}>Skip Question</button>
         <button class="button" data-action="next-question">${test.index === 24 ? "Finish Test" : "Next"}</button>
       </div>
+      <section class="card test-feedback" aria-live="polite">
+        <div class="running-score">
+          <span class="correct-count">Correct: <strong>${counts.correct}</strong>/18</span>
+          <span class="wrong-count">Wrong: <strong>${counts.wrong}</strong>/8</span>
+        </div>
+        ${test.lastResult ? `<div class="notice ${test.lastResult === "Correct" ? "success" : "error"}" role="status"><strong>Previous answer: ${test.lastResult}.</strong> Running total: ${counts.correct} correct and ${counts.wrong} wrong. ${18 - counts.correct} more correct answer${18 - counts.correct === 1 ? "" : "s"} passes the test; ${8 - counts.wrong} more wrong answer${8 - counts.wrong === 1 ? "" : "s"} ends it.</div>` : ""}
+      </section>
     `, {title:"Full Test", subtitle:`Question ${test.index + 1} of 25`});
   }
 
