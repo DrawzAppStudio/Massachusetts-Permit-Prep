@@ -152,7 +152,7 @@
         <p class="eyebrow">Full Test Mode</p>
         <h1>25 questions. Running score.</h1>
         <div class="notice"><strong>The real test allows 25 minutes.</strong><br />Set a 25-minute timer now if you want real test conditions.</div>
-        <p class="muted">After each answer, you will see only whether it was correct or wrong and your running totals. The correct answer and explanation stay hidden until the test ends. You may skip any question, including the first, but you cannot skip two questions in a row.</p>
+        <p class="muted">After each answer, you will see only whether it was correct or wrong and your running totals. The correct answer and explanation stay hidden until the test ends. You may skip any question, including the first, but you cannot skip two questions in a row. A skipped question is placed back later in this same test and does not count as wrong.</p>
         <div class="actions">
           <button class="button" data-action="begin-test">Begin Question 1</button>
           <button class="button ghost" data-action="back-home">Not Yet</button>
@@ -511,8 +511,12 @@
     if (action === "skip-question") {
       const test = data.activeTest;
       if (test.lastActionWasSkip) { flash = "Answer this question before using Skip again."; return renderTest(); }
+      const skipped = test.questions.splice(test.index, 1)[0];
+      const firstAllowedPosition = Math.min(test.index + 1, test.questions.length);
+      const lastPosition = test.questions.length;
+      const insertAt = firstAllowedPosition + Math.floor(Math.random() * (lastPosition - firstAllowedPosition + 1));
+      test.questions.splice(insertAt, 0, skipped);
       test.lastActionWasSkip = true;
-      test.index += 1;
       saveStore(); renderTest(); return;
     }
     if (action === "next-question") {
