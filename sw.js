@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "massachusetts-permit-prep-v13";
+const CACHE_NAME = "massachusetts-permit-prep-v14";
 const APP_FILES = ["./", "./index.html", "./styles.css", "./questions.js", "./engine.js", "./app.js", "./manifest.webmanifest", "./icons/ma-app-icon.svg", "./icons/ma-app-icon-192.png", "./icons/ma-app-icon-512.png"];
 
 self.addEventListener("install", event => {
