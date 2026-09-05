@@ -152,7 +152,7 @@
         <p class="eyebrow">Full Test Mode</p>
         <h1>25 questions. Running score.</h1>
         <div class="notice"><strong>The real test allows 25 minutes.</strong><br />Set a 25-minute timer now if you want real test conditions.</div>
-        <p class="muted">Choose one answer, then press Next. Your answer locks as soon as you select it. Only after you press Next will it be recorded as correct or wrong and added to the running totals. The correct answer and explanation stay hidden until the test ends. You may skip any question, including the first, but you cannot skip two questions in a row. A skipped question is placed back later in this same test and does not count as wrong.</p>
+        <p class="muted">Choose an answer, then press Next. You can change your selection as many times as needed before pressing Next. Only then will that answer lock, be recorded as correct or wrong, and be added to the running totals. The correct answer and explanation stay hidden until the test ends. You may skip any question, including the first, but you cannot skip two questions in a row. A skipped question is placed back later in this same test and does not count as wrong.</p>
         <div class="actions">
           <button class="button" data-action="begin-test">Begin Question 1</button>
           <button class="button ghost" data-action="back-home">Not Yet</button>
@@ -220,10 +220,11 @@
       return renderHome();
     }
     const answer = test.answers[question.id];
+    const answerFinal = Array.isArray(test.gradedQuestionIds) && test.gradedQuestionIds.includes(question.id);
     const counts = runningCounts(test);
     const options = item.optionIds.map(id => question.options.find(o => o.id === id));
     const choices = options.map((option, index) => `
-      <button class="choice ${answer === option.id ? "selected" : ""}" data-action="answer-test" data-option="${esc(option.id)}" aria-pressed="${answer === option.id}" ${answer ? "disabled" : ""}>
+      <button class="choice ${answer === option.id ? "selected" : ""}" data-action="answer-test" data-option="${esc(option.id)}" aria-pressed="${answer === option.id}" ${answerFinal ? "disabled" : ""}>
         <span class="choice-letter">${LETTERS[index]}</span><span>${esc(option.text)}</span>
       </button>`).join("");
     app.innerHTML = shell(`
@@ -515,7 +516,7 @@
     if (action === "answer-test") {
       const test = data.activeTest;
       const qid = test.questions[test.index].id;
-      if (test.answers[qid]) return;
+      if (Array.isArray(test.gradedQuestionIds) && test.gradedQuestionIds.includes(qid)) return;
       test.answers[qid] = button.dataset.option;
       test.lastActionWasSkip = false;
       test.lastResult = null;
