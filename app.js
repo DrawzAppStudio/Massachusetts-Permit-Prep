@@ -152,7 +152,7 @@
         <p class="eyebrow">Full Test Mode</p>
         <h1>25 questions. Running score.</h1>
         <div class="notice"><strong>The real test allows 25 minutes.</strong><br />Set a 25-minute timer now if you want real test conditions.</div>
-        <p class="muted">After each answer, you will see only whether it was correct or wrong and your running totals. Each answer locks as soon as it is selected. The correct answer and explanation stay hidden until the test ends. You may skip any question, including the first, but you cannot skip two questions in a row. A skipped question is placed back later in this same test and does not count as wrong.</p>
+        <p class="muted">Choose one answer, then press Next. Your answer locks as soon as you select it. Only after you press Next will it be recorded as correct or wrong and added to the running totals. The correct answer and explanation stay hidden until the test ends. You may skip any question, including the first, but you cannot skip two questions in a row. A skipped question is placed back later in this same test and does not count as wrong.</p>
         <div class="actions">
           <button class="button" data-action="begin-test">Begin Question 1</button>
           <button class="button ghost" data-action="back-home">Not Yet</button>
@@ -170,7 +170,9 @@
       index: 0,
       questions: generated.questions,
       answers: {},
+      gradedQuestionIds: [],
       lastActionWasSkip: false,
+      lastResult: null,
       nextSeenIds: generated.nextSeenIds
     };
   }
@@ -178,13 +180,26 @@
   function runningCounts(test) {
     let correct = 0;
     let wrong = 0;
+    const gradedIds = new Set(Array.isArray(test.gradedQuestionIds) ? test.gradedQuestionIds : []);
     Object.entries(test.answers || {}).forEach(([id, answerId]) => {
+      if (!gradedIds.has(id)) return;
       const question = questionById(id);
       if (!question) return;
       if (answerId === question.correct) correct += 1;
       else wrong += 1;
     });
     return {correct, wrong, answered: correct + wrong};
+  }
+
+  function recordCurrentAnswer(test) {
+    const questionId = test.questions[test.index].id;
+    const answerId = test.answers[questionId];
+    if (!answerId || (test.gradedQuestionIds || []).includes(questionId)) return null;
+    test.gradedQuestionIds = Array.isArray(test.gradedQuestionIds) ? test.gradedQuestionIds : [];
+    test.gradedQuestionIds.push(questionId);
+    const correct = answerId === questionById(questionId).correct;
+    test.lastResult = correct ? "Correct" : "Wrong";
+    return correct;
   }
 
   function renderTest() {
@@ -221,7 +236,7 @@
         </div>
         <h2 class="question">${esc(question.prompt)}</h2>
         <div class="choices">${choices}</div>
-        ${answer ? `<div class="notice ${answer === question.correct ? "success" : "error"}" role="status"><strong>${answer === question.correct ? "Correct." : "Wrong."}</strong> Running total: ${counts.correct} correct and ${counts.wrong} wrong. ${18 - counts.correct} more correct answer${18 - counts.correct === 1 ? "" : "s"} passes the test; ${8 - counts.wrong} more wrong answer${8 - counts.wrong === 1 ? "" : "s"} ends it.</div>` : ""}
+        ${test.lastResult ? `<div class="notice ${test.lastResult === "Correct" ? "success" : "error"}" role="status"><strong>Previous answer: ${test.lastResult}.</strong> Running total: ${counts.correct} correct and ${counts.wrong} wrong. ${18 - counts.correct} more correct answer${18 - counts.correct === 1 ? "" : "s"} passes the test; ${8 - counts.wrong} more wrong answer${8 - counts.wrong === 1 ? "" : "s"} ends it.</div>` : ""}
       </section>
       <div class="sticky-actions">
         <button class="button secondary" data-action="previous-question" ${test.index === 0 ? "disabled" : ""}>Back</button>
@@ -503,9 +518,7 @@
       if (test.answers[qid]) return;
       test.answers[qid] = button.dataset.option;
       test.lastActionWasSkip = false;
-      const counts = runningCounts(test);
-      if (counts.correct >= 18) { submitTest(true, "You reached 18 correct answers, so this test ended automatically."); return; }
-      if (counts.wrong >= 8) { submitTest(true, "You reached 8 wrong answers, so this test ended automatically."); return; }
+      test.lastResult = null;
       saveStore(); renderTest(); return;
     }
     if (action === "previous-question") { data.activeTest.index -= 1; saveStore(); renderTest(); return; }
@@ -518,12 +531,17 @@
       const insertAt = firstAllowedPosition + Math.floor(Math.random() * (lastPosition - firstAllowedPosition + 1));
       test.questions.splice(insertAt, 0, skipped);
       test.lastActionWasSkip = true;
+      test.lastResult = null;
       saveStore(); renderTest(); return;
     }
     if (action === "next-question") {
       const test = data.activeTest;
       const qid = test.questions[test.index].id;
       if (!test.answers[qid]) { flash = "Choose an answer before continuing."; return renderTest(); }
+      recordCurrentAnswer(test);
+      const counts = runningCounts(test);
+      if (counts.correct >= 18) { submitTest(true, "You reached 18 correct answers, so this test ended automatically."); return; }
+      if (counts.wrong >= 8) { submitTest(true, "You reached 8 wrong answers, so this test ended automatically."); return; }
       if (test.index < 24) { test.index += 1; saveStore(); renderTest(); }
       else showModal("Submit this test?", "<p>You answered all 25 questions. After submission, your score and explanations will appear.</p>", `<button class="button secondary" data-modal-action="close">Review Answers</button><button class="button" data-modal-action="submit-test">Submit Test</button>`);
       return;
