@@ -172,6 +172,9 @@ input:focus { outline: 3px solid rgba(85, 201, 255, .26); border-color: var(--bl
 .running-score strong { font-size: 1.08rem; }
 .correct-count strong { color: var(--green); }
 .wrong-count strong { color: var(--red); }
+.test-feedback { margin-top: 1.5rem; }
+.test-feedback .running-score { margin: 0; }
+.test-feedback .notice { margin: 1rem 0 0; }
 
 .progress { height: .5rem; margin: .45rem 0 1.25rem; overflow: hidden; border-radius: 1rem; background: #182b42; }
 .progress span { display: block; height: 100%; background: linear-gradient(90deg, var(--blue), var(--yellow)); }
