@@ -150,9 +150,9 @@
     app.innerHTML = shell(`
       <section class="card">
         <p class="eyebrow">Full Test Mode</p>
-        <h1>25 questions. No hints.</h1>
+        <h1>25 questions. Running score.</h1>
         <div class="notice"><strong>The real test allows 25 minutes.</strong><br />Set a 25-minute timer now if you want real test conditions.</div>
-        <p class="muted">You can move back and change an answer before submitting. Correct answers and explanations appear only after Question 25.</p>
+        <p class="muted">After each answer, you will see only whether it was correct or wrong and your running totals. The correct answer and explanation stay hidden until the test ends. You may skip any question, including the first, but you cannot skip two questions in a row.</p>
         <div class="actions">
           <button class="button" data-action="begin-test">Begin Question 1</button>
           <button class="button ghost" data-action="back-home">Not Yet</button>
@@ -170,8 +170,21 @@
       index: 0,
       questions: generated.questions,
       answers: {},
+      lastActionWasSkip: false,
       nextSeenIds: generated.nextSeenIds
     };
+  }
+
+  function runningCounts(test) {
+    let correct = 0;
+    let wrong = 0;
+    Object.entries(test.answers || {}).forEach(([id, answerId]) => {
+      const question = questionById(id);
+      if (!question) return;
+      if (answerId === question.correct) correct += 1;
+      else wrong += 1;
+    });
+    return {correct, wrong, answered: correct + wrong};
   }
 
   function renderTest() {
@@ -192,6 +205,7 @@
       return renderHome();
     }
     const answer = test.answers[question.id];
+    const counts = runningCounts(test);
     const options = item.optionIds.map(id => question.options.find(o => o.id === id));
     const choices = options.map((option, index) => `
       <button class="choice ${answer === option.id ? "selected" : ""}" data-action="answer-test" data-option="${esc(option.id)}" aria-pressed="${answer === option.id}">
@@ -201,20 +215,26 @@
       <section class="card">
         <p class="eyebrow">Question ${test.index + 1} of 25</p>
         <div class="progress" aria-label="Test progress"><span style="width:${((test.index + 1) / 25) * 100}%"></span></div>
+        <div class="running-score" aria-live="polite">
+          <span class="correct-count">Correct: <strong>${counts.correct}</strong>/18</span>
+          <span class="wrong-count">Wrong: <strong>${counts.wrong}</strong>/8</span>
+        </div>
         <h2 class="question">${esc(question.prompt)}</h2>
         <div class="choices">${choices}</div>
+        ${answer ? `<div class="notice ${answer === question.correct ? "success" : "error"}" role="status"><strong>${answer === question.correct ? "Correct." : "Wrong."}</strong> Running total: ${counts.correct} correct and ${counts.wrong} wrong. ${18 - counts.correct} more correct answer${18 - counts.correct === 1 ? "" : "s"} passes the test; ${8 - counts.wrong} more wrong answer${8 - counts.wrong === 1 ? "" : "s"} ends it.</div>` : ""}
       </section>
       <div class="sticky-actions">
         <button class="button secondary" data-action="previous-question" ${test.index === 0 ? "disabled" : ""}>Back</button>
+        <button class="button ghost" data-action="skip-question" ${test.lastActionWasSkip || test.index === 24 ? "disabled" : ""}>Skip Question</button>
         <button class="button" data-action="next-question">${test.index === 24 ? "Finish Test" : "Next"}</button>
       </div>
     `, {title:"Full Test", subtitle:`Question ${test.index + 1} of 25`});
   }
 
-  function submitTest() {
+  function submitTest(endedEarly = false, endReason = "") {
     const test = data.activeTest;
     const unanswered = test.questions.filter(item => !test.answers[item.id]);
-    if (unanswered.length) {
+    if (!endedEarly && unanswered.length) {
       flash = `Answer all 25 questions first. ${unanswered.length} ${unanswered.length === 1 ? "is" : "are"} still unanswered.`;
       const firstIndex = test.questions.findIndex(item => !test.answers[item.id]);
       test.index = firstIndex;
@@ -237,10 +257,17 @@
       answers: test.answers,
       missed: grade.missed,
       topicMisses: grade.topicMisses,
+      correctCount: grade.score,
+      wrongCount: grade.missed.length,
+      answeredCount: grade.score + grade.missed.length,
+      endedEarly,
+      endReason,
       manualVersion: "Massachusetts Driver's Manual - Revised April 2026"
     };
     data.history.unshift(completed);
-    data.seenIds = test.nextSeenIds || Array.from(new Set(data.seenIds.concat(test.questions.map(item => item.id))));
+    data.seenIds = endedEarly
+      ? Array.from(new Set(data.seenIds.concat(Object.keys(test.answers))))
+      : (test.nextSeenIds || Array.from(new Set(data.seenIds.concat(test.questions.map(item => item.id)))));
     data.activeTest = null;
     resultId = completed.id;
     saveStore();
@@ -275,6 +302,7 @@
         <span class="status ${statusClass}">${result.passed ? "PASS" : "NOT YET PASSING"}</span>
         <h2>${result.passed ? "You passed this practice test." : "Keep practicing. You are building it."}</h2>
       </section>
+      ${result.endedEarly ? `<div class="notice ${result.passed ? "success" : "error"}"><strong>${esc(result.endReason)}</strong><br />Final running total: ${result.correctCount} correct and ${result.wrongCount} wrong. Unanswered questions were not counted as wrong.</div>` : ""}
       ${passes >= 5 ? `<div class="notice success"><strong>NOW YOU ARE READY TO SCHEDULE FOR THE REAL PERMIT TEST!!!</strong></div>` : ""}
       ${weak.length ? `<section class="card compact"><h3>Weakest topics on this test</h3><p class="muted">${weak.map(([name,count]) => `${esc(name)} (${count})`).join(" • ")}</p></section>` : ""}
       <section><h2>Review</h2>${review}</section>
@@ -282,7 +310,7 @@
         <button class="button secondary" data-action="back-home">Return Home</button>
         <button class="button" data-action="new-test">New Test</button>
       </div>
-    `, {showBack:true, title:"Test Results", subtitle:`${result.score} correct out of 25`});
+    `, {showBack:true, title:"Test Results", subtitle:result.endedEarly ? `${result.correctCount} correct • ${result.wrongCount} wrong` : `${result.score} correct out of 25`});
   }
 
   function renderHistory() {
@@ -473,9 +501,20 @@
       const test = data.activeTest;
       const qid = test.questions[test.index].id;
       test.answers[qid] = button.dataset.option;
+      test.lastActionWasSkip = false;
+      const counts = runningCounts(test);
+      if (counts.correct >= 18) { submitTest(true, "You reached 18 correct answers, so this test ended automatically."); return; }
+      if (counts.wrong >= 8) { submitTest(true, "You reached 8 wrong answers, so this test ended automatically."); return; }
       saveStore(); renderTest(); return;
     }
     if (action === "previous-question") { data.activeTest.index -= 1; saveStore(); renderTest(); return; }
+    if (action === "skip-question") {
+      const test = data.activeTest;
+      if (test.lastActionWasSkip) { flash = "Answer this question before using Skip again."; return renderTest(); }
+      test.lastActionWasSkip = true;
+      test.index += 1;
+      saveStore(); renderTest(); return;
+    }
     if (action === "next-question") {
       const test = data.activeTest;
       const qid = test.questions[test.index].id;
